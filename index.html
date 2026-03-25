@@ -3,25 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>下午茶飲訂購單</title>
+    <title>社區訂購單</title>
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; max-width: 500px; margin: auto; background-color: #f4f4f9; }
         .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         h1 { color: #333; text-align: center; margin-bottom: 20px; }
+        
+        /* 這是新增的公告框樣式 */
+        .announcement-box { background-color: #fff3cd; color: #856404; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 15px; border: 1px solid #ffeeba; display: none; line-height: 1.5; }
+        
         label { display: block; margin-top: 15px; font-weight: bold; color: #555; }
         input[type="text"], select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; background-color: white; }
         button { margin-top: 30px; padding: 15px; background-color: #007BFF; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; width: 100%; font-weight: bold; transition: background 0.3s; }
         button:hover { background-color: #0056b3; }
         button:disabled { background-color: #a0c4ff; cursor: not-allowed; }
         .footer-note { text-align: center; color: #888; font-size: 13px; margin-top: 20px; }
-        /* 設定一個過渡動畫讓隱藏顯示更滑順 */
         #drinkOptions { transition: all 0.3s ease; overflow: hidden; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h1>📝 WD幸福下午茶飲 訂購單</h1>
+        <h1>📝 社區訂購單</h1>
+        
+        <div id="announcementBox" class="announcement-box"></div>
+
         <form id="orderForm">
             <label for="name">姓名：</label>
             <input type="text" id="name" name="name" required placeholder="請輸入您的姓名">
@@ -35,13 +41,16 @@
 
             <label for="drink">訂購品項：</label>
             <select id="drink" name="drink" required>
-                <option value="" disabled selected>🔄 菜單載入中...</option>
+                <option value="" disabled selected>🔄 資料載入中...</option>
             </select>
 
             <div id="drinkOptions">
                 <label for="sugar">甜度：</label>
                 <select id="sugar" name="sugar" required>
                     <option value="" disabled selected>請選擇甜度</option>
+                    <option value="正常糖">正常糖</option>
+                    <option value="少糖">少糖 (八分)</option>
+                    <option value="半糖">半糖 (五分)</option>
                     <option value="微糖">微糖 (三分)</option>
                     <option value="無糖">無糖</option>
                 </select>
@@ -49,14 +58,18 @@
                 <label for="ice">冰塊：</label>
                 <select id="ice" name="ice" required>
                     <option value="" disabled selected>請選擇冰塊</option>
+                    <option value="正常冰">正常冰</option>
+                    <option value="少冰">少冰</option>
                     <option value="微冰">微冰</option>
+                    <option value="去冰">去冰</option>
+                    <option value="常溫">常溫</option>
                     <option value="熱">熱</option>
                 </select>
             </div>
 
             <button type="submit" id="submitBtn" disabled>請稍候...</button>
         </form>
-        <div class="footer-note">訂單送出後將自動彙整至SHANE後台</div>
+        <div class="footer-note">訂單送出後將自動彙整至後台</div>
     </div>
 
     <script>
@@ -69,18 +82,28 @@
         const drinkOptionsDiv = document.getElementById('drinkOptions');
         const sugarSelect = document.getElementById('sugar');
         const iceSelect = document.getElementById('ice');
+        const announcementBox = document.getElementById('announcementBox');
 
         window.onload = function() {
             fetch(scriptURL)
                 .then(response => response.json())
-                .then(menu => {
+                .then(data => {
+                    // 1. 處理公告文字
+                    if (data.announcement && data.announcement.trim() !== "") {
+                        announcementBox.textContent = '📢 提醒：' + data.announcement;
+                        announcementBox.style.display = 'block'; // 有文字才顯示框框
+                    } else {
+                        announcementBox.style.display = 'none';  // 沒文字就隱藏
+                    }
+
+                    // 2. 處理選單資料
+                    const menu = data.menu;
                     drinkSelect.innerHTML = '<option value="" disabled selected>請選擇品項</option>';
                     
                     menu.forEach(item => {
                         let option = document.createElement('option');
                         option.value = item.name;
                         option.textContent = item.name;
-                        // 將類別資訊偷偷藏在選項裡面
                         option.dataset.category = item.category;
                         drinkSelect.appendChild(option);
                     });
@@ -93,22 +116,17 @@
                 });
         };
 
-        // 監聽品項選擇的變化
         drinkSelect.addEventListener('change', function() {
-            // 取得當前選中的選項
             const selectedOption = this.options[this.selectedIndex];
             const category = selectedOption.dataset.category;
 
-            // 如果是熱食，就隱藏甜度與冰塊
             if (category === '熱食') {
                 drinkOptionsDiv.style.display = 'none';
-                // 取消必填限制，否則隱藏了還是會無法送出表單
                 sugarSelect.required = false;
                 iceSelect.required = false;
                 sugarSelect.value = "";
                 iceSelect.value = "";
             } else {
-                // 如果是飲料，就顯示出來
                 drinkOptionsDiv.style.display = 'block';
                 sugarSelect.required = true;
                 iceSelect.required = true;
@@ -125,7 +143,6 @@
                 .then(response => {
                     alert('🎉 訂單送出成功！');
                     form.reset(); 
-                    // 送出後恢復預設的顯示狀態
                     drinkOptionsDiv.style.display = 'block';
                     sugarSelect.required = true;
                     iceSelect.required = true;
