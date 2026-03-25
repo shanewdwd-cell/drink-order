@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>下午茶訂購單</title>
+    <title>社區飲料訂購單</title>
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; max-width: 500px; margin: auto; background-color: #f4f4f9; }
         .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
@@ -19,7 +19,7 @@
 <body>
 
     <div class="card">
-        <h1>🥤 得正 手搖訂購單</h1>
+        <h1>🥤 飲料訂購單</h1>
         <form id="orderForm">
             <label for="name">姓名：</label>
             <input type="text" id="name" name="name" required placeholder="請輸入您的姓名">
@@ -33,17 +33,15 @@
 
             <label for="drink">飲料品項：</label>
             <select id="drink" name="drink" required>
-                <option value="" disabled selected>請選擇飲料</option>
-                <option value="焙烏龍">焙烏龍</option>
-                <option value="檸檬春烏龍">檸檬春烏龍</option>
-                <option value="焙烏龍鮮奶">焙烏龍鮮奶</option>
-                <option value="陳皮烏龍鮮奶">陳皮烏龍鮮奶</option>
-                <option value="紅茶">紅茶</option>
+                <option value="" disabled selected>🔄 菜單載入中...</option>
             </select>
 
             <label for="sugar">甜度：</label>
             <select id="sugar" name="sugar" required>
                 <option value="" disabled selected>請選擇甜度</option>
+                <option value="正常糖">正常糖</option>
+                <option value="少糖">少糖 (八分)</option>
+                <option value="半糖">半糖 (五分)</option>
                 <option value="微糖">微糖 (三分)</option>
                 <option value="無糖">無糖</option>
             </select>
@@ -51,22 +49,54 @@
             <label for="ice">冰塊：</label>
             <select id="ice" name="ice" required>
                 <option value="" disabled selected>請選擇冰塊</option>
+                <option value="正常冰">正常冰</option>
+                <option value="少冰">少冰</option>
                 <option value="微冰">微冰</option>
+                <option value="去冰">去冰</option>
+                <option value="常溫">常溫</option>
                 <option value="熱">熱</option>
             </select>
 
-            <button type="submit" id="submitBtn">送出訂單</button>
+            <button type="submit" id="submitBtn" disabled>請稍候...</button>
         </form>
-        <div class="footer-note">訂單送出後將自動彙整至SHANE後台</div>
+        <div class="footer-note">訂單送出後將自動彙整至後台</div>
     </div>
 
     <script>
-        // ⚠️ 請務必將下方的網址替換成您在 Google Apps Script 部署取得的網址
+        // ⚠️ 請務必將下方的網址替換成您的 Web App 網址
         const scriptURL = 'https://script.google.com/macros/s/AKfycbzfK7HOMkE2v60pUISkvZQwMNo2vz9pP3ln-UXr3c7ZNVKzlaMUitwbZxYAFXelw2bIiQ/exec';
         
         const form = document.forms['orderForm'];
         const submitBtn = document.getElementById('submitBtn');
+        const drinkSelect = document.getElementById('drink');
 
+        // 網頁一載入，立刻去試算表抓菜單
+        window.onload = function() {
+            fetch(scriptURL)
+                .then(response => response.json())
+                .then(drinks => {
+                    // 清空原本的「載入中」選項
+                    drinkSelect.innerHTML = '<option value="" disabled selected>請選擇飲料</option>';
+                    
+                    // 把試算表抓到的飲料，一個一個塞進選單裡
+                    drinks.forEach(drink => {
+                        let option = document.createElement('option');
+                        option.value = drink;
+                        option.textContent = drink;
+                        drinkSelect.appendChild(option);
+                    });
+                    
+                    // 菜單載入完成，解鎖送出按鈕
+                    submitBtn.textContent = '送出訂單';
+                    submitBtn.disabled = false;
+                })
+                .catch(error => {
+                    console.error('讀取菜單失敗:', error);
+                    drinkSelect.innerHTML = '<option value="" disabled selected>讀取失敗，請重新整理</option>';
+                });
+        };
+
+        // 送出訂單的處理邏輯 (不變)
         form.addEventListener('submit', e => {
             e.preventDefault(); 
             
