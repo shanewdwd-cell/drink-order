@@ -9,8 +9,8 @@
         .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         h1 { color: #333; text-align: center; margin-bottom: 20px; }
         
-        /* 這是新增的公告框樣式 */
-        .announcement-box { background-color: #fff3cd; color: #856404; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 15px; border: 1px solid #ffeeba; display: none; line-height: 1.5; }
+        /* 💡 新增 white-space: pre-wrap; 讓網頁能看懂試算表的換行符號 */
+        .announcement-box { background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 15px; border: 1px solid #ffeeba; display: none; line-height: 1.6; white-space: pre-wrap; }
         
         label { display: block; margin-top: 15px; font-weight: bold; color: #555; }
         input[type="text"], select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; background-color: white; }
@@ -88,12 +88,12 @@
             fetch(scriptURL)
                 .then(response => response.json())
                 .then(data => {
-                    // 1. 處理公告文字
+                    // 1. 處理公告文字：直接顯示試算表的原始排版
                     if (data.announcement && data.announcement.trim() !== "") {
-                        announcementBox.textContent = '📢 提醒：' + data.announcement;
-                        announcementBox.style.display = 'block'; // 有文字才顯示框框
+                        announcementBox.textContent = data.announcement;
+                        announcementBox.style.display = 'block'; 
                     } else {
-                        announcementBox.style.display = 'none';  // 沒文字就隱藏
+                        announcementBox.style.display = 'none';  
                     }
 
                     // 2. 處理選單資料
